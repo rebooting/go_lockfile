@@ -1,4 +1,4 @@
-run = "make run"
+run = "make test"
 hidden = ["Makefile", "main"]
 
 [languages.go]
