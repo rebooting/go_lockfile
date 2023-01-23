@@ -25,13 +25,18 @@ func (m TryLaterErr) Error() string {
 	return "File Locking in Action"
 }
 
+// Lockfile struct for creating .lock file
 type LockFile struct {
 }
 
+// creates an empty LockFile
 func New() LockFile {
 	return LockFile{}
 }
 
+// creates the lockfile of the supplied filename
+// it creates new file from fileName and a  ".lock" as the extention.
+// the callback is executed after the lockfile is successfully created
 func (l *LockFile) Lock(fileName string, callback func(string)) error {
 	// check if file exist
 	if _, err := os.Stat(fileName); err != nil {
@@ -55,15 +60,8 @@ func (l *LockFile) Lock(fileName string, callback func(string)) error {
 		return FileIsLockedError{}
 	}
 	defer syscall.Flock(int(file.Fd()), syscall.LOCK_UN)
-	
 
 	callback(fileName)
 
 	return nil
-}
-
-func openFile(fileName string) (file *os.File, err error) {
-
-	file, err = os.OpenFile("access.log", os.O_CREATE|os.O_WRONLY|os.O_EXCL, 0644)
-	return
 }

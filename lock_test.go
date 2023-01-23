@@ -95,7 +95,9 @@ func TestFileLocking(t *testing.T) {
 				t.Log("attempting to lock")
 			})
 			if cerr != nil {
-				t.Errorf("locking error %v", cerr)
+				t.Logf("locking error %v", cerr)
+			}else{
+				t.Error("It should not lock successfully")
 			}
 	
 			t.Log(("finished waiting\n"))
