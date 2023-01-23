@@ -1,4 +1,4 @@
-package golockfile
+package go_lockfile
 
 import (
 	"errors"

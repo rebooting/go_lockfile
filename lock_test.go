@@ -1,4 +1,4 @@
-package golockfile_test
+package go_lockfile_test
 
 import (
 	"github.com/rebooting/go_lockfile"
@@ -38,7 +38,7 @@ func TestBasicLockCreation(t *testing.T) {
 	testcases := []testCase{
 		{
 			file:    "/tmp/nofile",
-			err:     golockfile.FileNotFoundError{},
+			err:     go_lockfile.FileNotFoundError{},
 			fnSetup: func() {},
 			fnLogic: func() error { return nil },
 			fnTeardown: func() {
@@ -60,7 +60,7 @@ func TestBasicLockCreation(t *testing.T) {
 		eachTestCase.fnSetup()
 		defer eachTestCase.fnTeardown()
 
-		lf := golockfile.New()
+		lf := go_lockfile.New()
 		if err := lf.Lock(eachTestCase.file, func(x string) {}); err != nil {
 			eachTestCase.fnLogic()
 			if err != eachTestCase.err {
@@ -76,21 +76,21 @@ func TestFileLocking(t *testing.T) {
 
 	tcase := testCase{
 		file:    "/tmp/nofile",
-		err:     golockfile.FileIsLockedError{},
+		err:     go_lockfile.FileIsLockedError{},
 		fnSetup: func() { setupAccess(t, "/tmp/nofile") },
 		fnLogic: func() error { return nil },
 		fnTeardown: func() {
 			teardownAccess(t, "/tmp/nofile")
 		},
 	}
-	lf := golockfile.New()
+	lf := go_lockfile.New()
 	tcase.fnSetup()
 
 	lf.Lock(tcase.file, func(f string) {
 		func() {
 			t.Log(("waiting\n"))
 
-			cf := golockfile.New()
+			cf := go_lockfile.New()
 			cerr := cf.Lock(tcase.file, func(f string) {
 				t.Log("attempting to lock")
 			})
