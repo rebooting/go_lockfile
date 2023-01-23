@@ -1,3 +1,3 @@
-module github.com/rebooting/go_lockfile
+module github.com/rebooting/golockfile
 
 go 1.19
