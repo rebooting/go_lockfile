@@ -6,6 +6,7 @@ import (
 	"os"
 	"sync"
 	"syscall"
+	"path/filepath"
 )
 
 type FileNotFoundError struct{}
@@ -40,10 +41,16 @@ func New(logging bool) LockFile {
 // creates the lockfile of the supplied filename
 // it creates new file from fileName and a  ".lock" as the extention.
 // the callback is executed after the lockfile is successfully created
-func (l *LockFile) LockRun(fileName string, runnableCallback func(string)) error {
-	log.Printf("attempting to acquire lock for %s\n", fileName)
+func (l *LockFile) LockRun(filePath string, runnableCallback func(string)) error {
+	fileName := filepath.Join("",filepath.Clean(filePath))
+	if l.logging {
+		log.Printf("attempting to acquire lock for %s\n", fileName)
+	}
+
 	l.mutex.Lock()
-	log.Printf("lock acquired for %s\n", fileName)
+	if l.logging {
+		log.Printf("lock acquired for %s\n", fileName)
+	}
 	defer l.mutex.Unlock()
 	// check if file exist
 	if _, err := os.Stat(fileName); err != nil {
@@ -53,8 +60,14 @@ func (l *LockFile) LockRun(fileName string, runnableCallback func(string)) error
 		}
 	}
 	// create lockfile
-	file, err := os.OpenFile(fileName+".lock", os.O_CREATE|os.O_WRONLY|os.O_EXCL, 0600)
-	defer file.Close()
+	lockfile:= filepath.Clean(filePath+".lock")
+	file, err := os.OpenFile(lockfile, os.O_CREATE|os.O_WRONLY|os.O_EXCL, 0600)
+	defer func() {
+		if err := file.Close(); err != nil {
+			log.Printf("Error closing file: %s\n", err)
+		}
+	}()
+
 	defer os.Remove(fileName + ".lock")
 	if err != nil {
 		log.Printf("cannot O_EXCL file %s , error: %v\n", fileName, err)
