@@ -4,6 +4,7 @@ import (
 	"errors"
 	"log"
 	"os"
+	"sync"
 	"syscall"
 )
 
@@ -27,17 +28,23 @@ func (m TryLaterErr) Error() string {
 
 // Lockfile struct for creating .lock file
 type LockFile struct {
+	logging bool
+	mutex   sync.Mutex
 }
 
-// creates an empty LockFile
-func New() LockFile {
-	return LockFile{}
+// creates a LockFile with option to turn on logging
+func New(logging bool) LockFile {
+	return LockFile{logging: logging}
 }
 
 // creates the lockfile of the supplied filename
 // it creates new file from fileName and a  ".lock" as the extention.
 // the callback is executed after the lockfile is successfully created
-func (l *LockFile) Lock(fileName string, callback func(string)) error {
+func (l *LockFile) LockRun(fileName string, runnableCallback func(string)) error {
+	log.Printf("attempting to acquire lock for %s\n", fileName)
+	l.mutex.Lock()
+	log.Printf("lock acquired for %s\n", fileName)
+	defer l.mutex.Unlock()
 	// check if file exist
 	if _, err := os.Stat(fileName); err != nil {
 		// log.Printf("cannot STAT file %s , error: %v\n", fileName, err)
@@ -61,7 +68,7 @@ func (l *LockFile) Lock(fileName string, callback func(string)) error {
 	}
 	defer syscall.Flock(int(file.Fd()), syscall.LOCK_UN)
 
-	callback(fileName)
+	runnableCallback(fileName)
 
 	return nil
 }
