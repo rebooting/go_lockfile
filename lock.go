@@ -4,9 +4,9 @@ import (
 	"errors"
 	"log"
 	"os"
+	"path/filepath"
 	"sync"
 	"syscall"
-	"path/filepath"
 )
 
 type FileNotFoundError struct{}
@@ -30,26 +30,29 @@ func (m TryLaterErr) Error() string {
 // Lockfile struct for creating .lock file
 type LockFile struct {
 	logging bool
+	id      string
 	mutex   sync.Mutex
 }
 
-// creates a LockFile with option to turn on logging
-func New(logging bool) LockFile {
-	return LockFile{logging: logging}
+// creates a LockFile with the caller ID andoption to turn on logging,
+// the caller ID should be a unique identifier from the proces:
+// e.g. PID, SNO or UUID in case if the lockfile is not deleted, the content of the lock file can be used to indicate if the process still exists before being deleted.
+func New(id string, logging bool) LockFile {
+	return LockFile{id: id, logging: logging}
 }
 
 // creates the lockfile of the supplied filename
 // it creates new file from fileName and a  ".lock" as the extention.
 // the callback is executed after the lockfile is successfully created
 func (l *LockFile) LockRun(filePath string, runnableCallback func(string)) error {
-	fileName := filepath.Join("",filepath.Clean(filePath))
+	fileName := filepath.Join("", filepath.Clean(filePath))
 	if l.logging {
-		log.Printf("attempting to acquire lock for %s\n", fileName)
+		log.Printf("attempting to acquire mutex for %s\n", fileName)
 	}
 
 	l.mutex.Lock()
 	if l.logging {
-		log.Printf("lock acquired for %s\n", fileName)
+		log.Printf("mutex acquired for %s\n", fileName)
 	}
 	defer l.mutex.Unlock()
 	// check if file exist
@@ -60,7 +63,7 @@ func (l *LockFile) LockRun(filePath string, runnableCallback func(string)) error
 		}
 	}
 	// create lockfile
-	lockfile:= filepath.Clean(filePath+".lock")
+	lockfile := filepath.Clean(filePath + ".lock")
 	file, err := os.OpenFile(lockfile, os.O_CREATE|os.O_WRONLY|os.O_EXCL, 0600)
 	defer func() {
 		if err := file.Close(); err != nil {
@@ -79,6 +82,15 @@ func (l *LockFile) LockRun(filePath string, runnableCallback func(string)) error
 		log.Printf("cannot FLOCK file %s , error: %v\n", fileName, err)
 		return FileIsLockedError{}
 	}
+	// write identifer to file
+	n, err:=file.WriteString(l.id)
+	if err!=nil{
+		return err
+	}
+	if l.logging{
+		log.Printf("%d bytes written to %s", n, lockfile)
+	}
+	
 	defer syscall.Flock(int(file.Fd()), syscall.LOCK_UN)
 
 	runnableCallback(fileName)
