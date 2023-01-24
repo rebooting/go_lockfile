@@ -60,8 +60,8 @@ func TestBasicLockCreation(t *testing.T) {
 		eachTestCase.fnSetup()
 		defer eachTestCase.fnTeardown()
 
-		lf := go_lockfile.New()
-		if err := lf.Lock(eachTestCase.file, func(x string) {}); err != nil {
+		lf := go_lockfile.New(true)
+		if err := lf.LockRun(eachTestCase.file, func(x string) {}); err != nil {
 			eachTestCase.fnLogic()
 			if err != eachTestCase.err {
 				t.Errorf("# %d Expected %v, got %v", i, eachTestCase.err, err.Error())
@@ -83,15 +83,15 @@ func TestFileLocking(t *testing.T) {
 			teardownAccess(t, "/tmp/nofile")
 		},
 	}
-	lf := go_lockfile.New()
+	lf := go_lockfile.New(true)
 	tcase.fnSetup()
 
-	lf.Lock(tcase.file, func(f string) {
+	lf.LockRun(tcase.file, func(f string) {
 		func() {
 			t.Log(("waiting\n"))
 
-			cf := go_lockfile.New()
-			cerr := cf.Lock(tcase.file, func(f string) {
+			cf := go_lockfile.New(true)
+			cerr := cf.LockRun(tcase.file, func(f string) {
 				t.Log("attempting to lock")
 			})
 			if cerr != nil {
