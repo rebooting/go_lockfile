@@ -1,10 +1,12 @@
 package go_lockfile_test
 
 import (
-	"github.com/rebooting/go_lockfile"
 	"log"
 	"os"
+	"path/filepath"
 	"testing"
+
+	"github.com/rebooting/go_lockfile"
 	// "time"
 )
 
@@ -60,7 +62,7 @@ func TestBasicLockCreation(t *testing.T) {
 		eachTestCase.fnSetup()
 		defer eachTestCase.fnTeardown()
 
-		lf := go_lockfile.New(true)
+		lf := go_lockfile.New("aaa",true)
 		if err := lf.LockRun(eachTestCase.file, func(x string) {}); err != nil {
 			eachTestCase.fnLogic()
 			if err != eachTestCase.err {
@@ -83,14 +85,14 @@ func TestFileLocking(t *testing.T) {
 			teardownAccess(t, "/tmp/nofile")
 		},
 	}
-	lf := go_lockfile.New(true)
+	lf := go_lockfile.New("aaa",true)
 	tcase.fnSetup()
 
 	lf.LockRun(tcase.file, func(f string) {
 		func() {
 			t.Log(("waiting\n"))
 
-			cf := go_lockfile.New(true)
+			cf := go_lockfile.New("aaa",true)
 			cerr := cf.LockRun(tcase.file, func(f string) {
 				t.Log("attempting to lock")
 			})
@@ -104,5 +106,22 @@ func TestFileLocking(t *testing.T) {
 			defer tcase.fnTeardown()
 		}()
 	})
-	
+}
+
+
+func TestContentofLockfile(t *testing.T){
+	lf := go_lockfile.New("aaa-bbb",true)
+	setupAccess(t, "/tmp/nofile") 
+	defer teardownAccess(t, "/tmp/nofile") 
+	lf.LockRun("/tmp/nofile",func(f string){
+		//linux locks are advisory
+		lockfile:=filepath.Clean(f+".lock")
+		data, err := os.ReadFile(lockfile)
+		if err!=nil{
+			t.Errorf("can't read lock file %v", err.Error())
+		}
+		if string(data) != "aaa-bbb"{
+			t.Errorf("expecting aaa-bbb got %s\n", data)
+		}
+	})
 }
