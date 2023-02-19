@@ -57,7 +57,9 @@ func (l *LockFile) LockRun(filePath string, runnableCallback func(string)) error
 	defer l.mutex.Unlock()
 	// check if file exist
 	if _, err := os.Stat(fileName); err != nil {
-		// log.Printf("cannot STAT file %s , error: %v\n", fileName, err)
+		if l.logging {
+			log.Printf("cannot STAT file %s , error: %v\n", fileName, err)
+		}
 		if errors.Is(err, os.ErrNotExist) {
 			return FileNotFoundError{}
 		}
