@@ -123,3 +123,18 @@ func TestContentofLockfile(t *testing.T) {
 		}
 	})
 }
+
+func TestFileLockingWithoutDependency(t *testing.T){
+	lf := go_lockfile.New("aaa-bbb", go_lockfile.Options{Logging: true, NoFileDependency:true})
+	lf.LockRun("/tmp/nofile", func(f string) {
+		//linux locks are advisory
+		lockfile := filepath.Clean(f + ".lock")
+		data, err := os.ReadFile(lockfile)
+		if err != nil {
+			t.Errorf("can't read lock file %v", err.Error())
+		}
+		if string(data) != "aaa-bbb" {
+			t.Errorf("expecting aaa-bbb got %s\n", data)
+		}
+	})
+}
