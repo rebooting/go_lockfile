@@ -1,5 +1,6 @@
 run = "make test"
 hidden = ["Makefile", "main"]
+entrypoint = "main.go"
 
 [languages.go]
 pattern = "**/*.go"
