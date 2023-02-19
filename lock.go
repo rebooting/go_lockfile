@@ -29,16 +29,23 @@ func (m TryLaterErr) Error() string {
 
 // Lockfile struct for creating .lock file
 type LockFile struct {
-	logging bool
+	options Options
 	id      string
+	
 	mutex   sync.Mutex
 }
+
+type Options struct{
+	NoFileDependency bool // disable check for filename for locking , this is useful if you just want a lock flie 
+	Logging bool // enable logging
+}
+
 
 // creates a LockFile with the caller ID andoption to turn on logging,
 // the caller ID should be a unique identifier from the proces:
 // e.g. PID, SNO or UUID in case if the lockfile is not deleted, the content of the lock file can be used to indicate if the process still exists before being deleted.
-func New(id string, logging bool) LockFile {
-	return LockFile{id: id, logging: logging}
+func New(id string, options Options) LockFile {
+	return LockFile{id: id, options: options}
 }
 
 // creates the lockfile of the supplied filename
@@ -46,18 +53,18 @@ func New(id string, logging bool) LockFile {
 // the callback is executed after the lockfile is successfully created
 func (l *LockFile) LockRun(filePath string, runnableCallback func(string)) error {
 	fileName := filepath.Join("", filepath.Clean(filePath))
-	if l.logging {
+	if l.options.Logging {
 		log.Printf("attempting to acquire mutex for %s\n", fileName)
 	}
 
 	l.mutex.Lock()
-	if l.logging {
+	if l.options.Logging {
 		log.Printf("mutex acquired for %s\n", fileName)
 	}
 	defer l.mutex.Unlock()
 	// check if file exist
 	if _, err := os.Stat(fileName); err != nil {
-		if l.logging {
+		if l.options.Logging {
 			log.Printf("cannot STAT file %s , error: %v\n", fileName, err)
 		}
 		if errors.Is(err, os.ErrNotExist) {
@@ -89,7 +96,7 @@ func (l *LockFile) LockRun(filePath string, runnableCallback func(string)) error
 	if err!=nil{
 		return err
 	}
-	if l.logging{
+	if l.options.Logging{
 		log.Printf("%d bytes written to %s", n, lockfile)
 	}
 	
